@@ -17,6 +17,7 @@ const room = "ttyh@conference.jabber.ru"
 const name = "Жобе"
 const me = "hypnotoad@xmpp.ru"
 
+// const room = "kkkkkkk2@conference.jabber.ru"
 var (
 	ping  time.Time
 	admin []string
@@ -24,7 +25,8 @@ var (
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	Conn, err := xmpp.Dial("xmpp.ru:5222", "hypnotoad", "xmpp.ru", "password", "AllHailHypnotoad", nil)
+start:
+	Conn, err := xmpp.Dial("xmpp.ru:5222", "hypnotoad", "xmpp.ru", "pass", "AllHailHypnotoad", nil)
 	if err != nil {
 		log.Fatalln("Conn", err)
 	}
@@ -34,14 +36,13 @@ func main() {
 	if err := Conn.SendPresence(room+"/"+name, ""); err != nil {
 		log.Fatalln("Presence", err)
 	}
-
-	//just in case
+	
     go func() {
         for {
             select {
             case <-time.After(60 * time.Second):
                 if _, _, err = Conn.SendIQ("xmpp.ru", "set", "<keepalive xmlns='urn:xmpp:keepalive:0'> <interval>60</interval> </keepalive>"); err != nil {
-					log.Fatalln("KeepAlive", err)
+					log.("KeepAlive", err)
 				}
                 log.Println("SENT 60")
             }
@@ -51,7 +52,10 @@ func main() {
 	for {
 		next, err := Conn.Next()
 		if err != nil {
-			log.Fatalln("Next", err)
+			log.Println("Next", err, "Conn", Conn)
+			Conn.Close()
+			time.Sleep(10 * time.Second)
+			goto start
 		}
 		switch t := next.Value.(type) {
 		case *xmpp.ClientPresence:
