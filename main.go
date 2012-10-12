@@ -42,7 +42,7 @@ start:
             select {
             case <-time.After(60 * time.Second):
                 if _, _, err = Conn.SendIQ("xmpp.ru", "set", "<keepalive xmlns='urn:xmpp:keepalive:0'> <interval>60</interval> </keepalive>"); err != nil {
-					log.("KeepAlive", err)
+					log.Fatalln("KeepAlive", err)
 				}
                 log.Println("SENT 60")
             }
