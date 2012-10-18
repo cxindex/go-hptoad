@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./xmpp"
+	"github.com/cxindex/xmpp"
 	"fmt"
 	"io/ioutil"
 	"log"
