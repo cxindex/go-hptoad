@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/cxindex/xmpp"
+	"./xmpp"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -14,13 +14,15 @@ import (
 )
 
 const room = "ttyh@conference.jabber.ru"
-const name = "Жобе"
+const name = "Жобe"
 const me = "hypnotoad@xmpp.ru"
 
 // const room = "kkkkkkk2@conference.jabber.ru"
 var (
 	ping  time.Time
 	admin []string
+	cs    = make(chan xmpp.Stanza)
+	next  xmpp.Stanza
 )
 
 func main() {
@@ -36,39 +38,52 @@ start:
 	if err := Conn.SendPresence(room+"/"+name, ""); err != nil {
 		log.Fatalln("Presence", err)
 	}
-	
-    go func() {
-        for {
-            select {
-            case <-time.After(60 * time.Second):
-                if _, _, err = Conn.SendIQ("xmpp.ru", "set", "<keepalive xmlns='urn:xmpp:keepalive:0'> <interval>60</interval> </keepalive>"); err != nil {
-					log.Fatalln("KeepAlive", err)
+
+	go func(Conn *xmpp.Conn) {
+		for {
+			select {
+			case <-time.After(60 * time.Second):
+				//just in case
+				Conn.SendIQ("jabber.ru", "set", "<keepalive xmlns='urn:xmpp:keepalive:0'> <interval>60</interval> </keepalive>")
+				if _, _, err = Conn.SendIQ("jabber.ru", "get", "<ping xmlns='urn:xmpp:ping'/>"); err != nil {
+					log.Println("KeepAlive err:", err)
+					return
 				}
-                log.Println("SENT 60")
-            }
-        }
-    }()
+				ping = time.Now()
+				log.Println("KeepAlive is sent")
+			}
+		}
+	}(Conn)
+
+	go func(Conn *xmpp.Conn) {
+		for {
+			next, err := Conn.Next()
+			if err != nil {
+				log.Println("Next err:", err)
+				return
+			}
+			cs <- next
+		}
+	}(Conn)
 
 	for {
-		next, err := Conn.Next()
-		if err != nil {
-			log.Println("Next", err, "Conn", Conn)
+		select {
+		case next = <-cs:
+			log.Println(next.Value)
+		case <-time.After(65 * time.Second):
+			log.Println("closed after 65 seconds of inactivity")
 			Conn.Close()
-			time.Sleep(10 * time.Second)
 			goto start
 		}
 		switch t := next.Value.(type) {
 		case *xmpp.ClientPresence:
-			fmt.Println(t)
 			PresenceHandler(Conn, t)
 		case *xmpp.ClientIQ:
-			fmt.Println(t)
 			if t.Type == "result" {
 				since := time.Since(ping)
-				Conn.Send(room, "groupchat", fmt.Sprintf("%v %v", since, t.From))
+				log.Println(since, t.From)
 			}
 		case *xmpp.ClientMessage:
-			fmt.Println(t)
 			if len(t.Delay.Stamp) == 0 && len(t.Subject) == 0 && GetNick(t.From) != name {
 				if t.Type == "groupchat" {
 					go MessageHandler(Conn, t)
@@ -77,7 +92,7 @@ start:
 				}
 			}
 		default:
-			fmt.Println(t)
+			log.Println("da fuq?")
 		}
 	}
 }
@@ -99,20 +114,6 @@ func MessageHandler(Conn *xmpp.Conn, Msg *xmpp.ClientMessage) {
 		return ok
 	}
 	switch {
-	case f("^\\!ping($| )", &Msg.Body): //built-in
-		to := strings.Split(Msg.Body, " ")
-		if len(to) > 1 {
-			for k, v := range to {
-				if k == 0 {
-					continue
-				}
-				ping = time.Now()
-				Conn.SendIQ(room+"/"+v, "get", "<ping xmlns='urn:xmpp:ping'/>")
-			}
-			return
-		}
-		ping = time.Now()
-		Conn.SendIQ(Msg.From, "get", "<ping xmlns='urn:xmpp:ping'/>")
 	case f("^\\!", &Msg.Body): //any external command
 		Strip(&Msg.Body, &Msg.From)
 		cmd := exec.Command("bash", "-c", GetCommand(Msg.Body, Msg.From, "./plugins/"))
