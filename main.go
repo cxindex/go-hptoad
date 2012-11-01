@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/cxindex/xmpp"
 	"fmt"
+	"github.com/cxindex/xmpp"
 	"io/ioutil"
 	"log"
 	"os/exec"
@@ -71,8 +71,7 @@ start:
 		case next = <-cs:
 			log.Println(next.Value)
 		case <-time.After(65 * time.Second):
-			log.Println("closed after 65 seconds of inactivity")
-			Conn.Close()
+			log.Println(Conn.Close(), "\n\t", "closed after 65 seconds of inactivity")
 			goto start
 		}
 		switch t := next.Value.(type) {
@@ -95,6 +94,9 @@ start:
 			log.Println("da fuq?")
 		}
 	}
+	log.Println(Conn.Close(), "\n\t", "wtf am I doing here?")
+	time.Sleep(5 * time.Second)
+	goto start
 }
 
 func SelfHandler(Conn *xmpp.Conn, Msg *xmpp.ClientMessage) {
