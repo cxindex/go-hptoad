@@ -139,7 +139,7 @@ func MessageHandler(Conn *xmpp.Conn, Msg *xmpp.ClientMessage) {
 		Conn.Send(room, "groupchat", strings.TrimRight(string(out), " \n"))
 	case f("^"+name, &Msg.Body): //chat
 		Strip(&Msg.Body, &Msg.From)
-		r, _ := regexp.Compile("^\\./chat/" + name + ":")
+		r, _ := regexp.Compile("^\\./chat/" + name + "[:,]")
 		command := r.ReplaceAllString(GetCommand("!"+Msg.Body, Msg.From, "./chat/"), "./chat/answer")
 		out, err := exec.Command("bash", "-c", command).CombinedOutput()
 		if err != nil {
