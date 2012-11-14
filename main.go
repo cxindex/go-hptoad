@@ -30,15 +30,21 @@ func main() {
 start:
 	Conn, err := xmpp.Dial("xmpp.ru:5222", "hypnotoad", "xmpp.ru", "pass", "AllHailHypnotoad", nil)
 	if err != nil {
-		log.Fatalln("Conn", err)
+		log.Println("Conn", err)
+		time.Sleep(5 * time.Second)
+		goto start
 	}
-	if err := Conn.SignalPresence("dnd", "is there some food in this world?", 11); err != nil {
-		log.Fatalln("Signal", err)
+	if err := Conn.SignalPresence("dnd", "is there some food in this world?", 12); err != nil {
+		log.Println("Signal", err)
+		time.Sleep(5 * time.Second)
+		goto start
 	}
 	if err := Conn.SendPresence(room+"/"+name, ""); err != nil {
-		log.Fatalln("Presence", err)
+		log.Println("Presence", err)
+		time.Sleep(5 * time.Second)
+		goto start
 	}
-
+	
 	go func(Conn *xmpp.Conn) {
 		for {
 			select {
