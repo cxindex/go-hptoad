@@ -182,7 +182,7 @@ func GetCommand(body, from, dir string) string {
 }
 
 func Strip(s, s2 *string) {
-	r, _ := regexp.Compile("(`|\\$|\"|')") //strip
+	r, _ := regexp.Compile("(`|\\$|\"|'|\\.\\.)") //strip
 	*s = r.ReplaceAllString(*s, "")
 	*s2 = r.ReplaceAllString(*s2, "")
 }
