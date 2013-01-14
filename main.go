@@ -122,6 +122,12 @@ func MessageHandler(Conn *xmpp.Conn, Msg *xmpp.ClientMessage) {
 		return ok
 	}
 	switch {
+	case f("^\\!megakick", &Msg.Body):
+		s := (strings.Split(Msg.Body, "!megakick "))
+		if in(admin, Msg.From) {
+			Conn.ModUse(room, s[1], "none", "none")
+		}
+		return
 	case f("^\\!", &Msg.Body): //any external command
 		Strip(&Msg.Body, &Msg.From)
 		cmd := exec.Command("bash", "-c", GetCommand(Msg.Body, Msg.From, "./plugins/"))
