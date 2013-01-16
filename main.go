@@ -17,7 +17,6 @@ const room = "ttyh@conference.jabber.ru"
 const name = "Жобe"
 const me = "hypnotoad@xmpp.ru"
 
-// const room = "kkkkkkk2@conference.jabber.ru"
 var (
 	ping  time.Time
 	admin []string
@@ -44,19 +43,17 @@ start:
 		time.Sleep(5 * time.Second)
 		goto start
 	}
-	
+
 	go func(Conn *xmpp.Conn) {
 		for {
 			select {
 			case <-time.After(60 * time.Second):
-				//just in case
 				Conn.SendIQ("jabber.ru", "set", "<keepalive xmlns='urn:xmpp:keepalive:0'> <interval>60</interval> </keepalive>")
 				if _, _, err = Conn.SendIQ("jabber.ru", "get", "<ping xmlns='urn:xmpp:ping'/>"); err != nil {
 					log.Println("KeepAlive err:", err)
 					return
 				}
 				ping = time.Now()
-				log.Println("KeepAlive is sent")
 			}
 		}
 	}(Conn)
@@ -75,7 +72,6 @@ start:
 	for {
 		select {
 		case next = <-cs:
-			log.Println(next.Value)
 		case <-time.After(65 * time.Second):
 			log.Println(Conn.Close(), "\n\t", "closed after 65 seconds of inactivity")
 			goto start
@@ -83,21 +79,15 @@ start:
 		switch t := next.Value.(type) {
 		case *xmpp.ClientPresence:
 			PresenceHandler(Conn, t)
-		case *xmpp.ClientIQ:
-			if t.Type == "result" {
-				since := time.Since(ping)
-				log.Println(since, t.From)
-			}
 		case *xmpp.ClientMessage:
 			if len(t.Delay.Stamp) == 0 && len(t.Subject) == 0 && GetNick(t.From) != name {
+				log.Println(t)
 				if t.Type == "groupchat" {
 					go MessageHandler(Conn, t)
 				} else if xmpp.RemoveResourceFromJid(strings.ToLower(t.From)) == me {
 					go SelfHandler(Conn, t)
 				}
 			}
-		default:
-			log.Println("da fuq?")
 		}
 	}
 	log.Println(Conn.Close(), "\n\t", "wtf am I doing here?")
@@ -123,11 +113,13 @@ func MessageHandler(Conn *xmpp.Conn, Msg *xmpp.ClientMessage) {
 	}
 	switch {
 	case f("^\\!megakick", &Msg.Body):
+		Strip(&Msg.Body, &Msg.From)
 		s := (strings.Split(Msg.Body, "!megakick "))
 		if in(admin, Msg.From) {
-			Conn.ModUse(room, s[1], "none", "none")
+			Conn.ModUse(room, s[1], "none", "")
+		} else {
+			Conn.Send(room, "groupchat", fmt.Sprintf("%s: GTFO", GetNick(Msg.From)))
 		}
-		return
 	case f("^\\!", &Msg.Body): //any external command
 		Strip(&Msg.Body, &Msg.From)
 		cmd := exec.Command("bash", "-c", GetCommand(Msg.Body, Msg.From, "./plugins/"))
