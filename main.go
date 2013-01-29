@@ -98,6 +98,9 @@ start:
 func SelfHandler(Conn *xmpp.Conn, Msg *xmpp.ClientMessage) {
 	Msg.Body = strings.TrimSpace(Msg.Body)
 	Conn.Send(room, "groupchat", Msg.Body)
+	if Msg.From == me+"/gsend" {
+		return
+	}
 	Strip(&Msg.Body, &Msg.From)
 	if err := exec.Command("bash", "-c", GetCommand("!"+Msg.Body, Msg.From, "./func/")).Run(); err != nil {
 		log.Println(err)
