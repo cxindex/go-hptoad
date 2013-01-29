@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	Conn, err := xmpp.Dial("xmpp.ru:5222", "hypnotoad", "xmpp.ru", "password", "ic", nil)
+	Conn, err := xmpp.Dial("xmpp.ru:5222", "hypnotoad", "xmpp.ru", "password", "gsend", nil)
 	if err != nil {
 		println(err)
 		return
