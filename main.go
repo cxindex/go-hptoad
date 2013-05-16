@@ -80,12 +80,14 @@ start:
 		case *xmpp.ClientPresence:
 			PresenceHandler(Conn, t)
 		case *xmpp.ClientMessage:
-			if len(t.Delay.Stamp) == 0 && len(t.Subject) == 0 && GetNick(t.From) != name {
+			if len(t.Delay.Stamp) == 0 && len(t.Subject) == 0 {
 				log.Println(t)
-				if t.Type == "groupchat" {
-					go MessageHandler(Conn, t)
-				} else if xmpp.RemoveResourceFromJid(strings.ToLower(t.From)) == me {
-					go SelfHandler(Conn, t)
+				if GetNick(t.From) != name {
+					if t.Type == "groupchat" {
+						go MessageHandler(Conn, t)
+					} else if xmpp.RemoveResourceFromJid(strings.ToLower(t.From)) == me {
+						go SelfHandler(Conn, t)
+					}
 				}
 			}
 		}
