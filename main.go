@@ -127,7 +127,6 @@ func MessageHandler(Conn *xmpp.Conn, Msg *xmpp.ClientMessage) {
 		}
 	case f("^\\!", &Msg.Body): //any external command
 		Strip(&Msg.Body, &Msg.From)
-		log.Println(GetCommand(Msg.Body, Msg.From, "./plugins/"))
 		cmd := exec.Command("bash", "-c", GetCommand(Msg.Body, Msg.From, "./plugins/"))
 		stdout, _ := cmd.StdoutPipe()
 		stderr, _ := cmd.StderrPipe()
