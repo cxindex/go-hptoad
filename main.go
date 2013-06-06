@@ -127,6 +127,7 @@ func MessageHandler(Conn *xmpp.Conn, Msg *xmpp.ClientMessage) {
 		}
 	case f("^\\!", &Msg.Body): //any external command
 		Strip(&Msg.Body, &Msg.From)
+		log.Println(GetCommand(Msg.Body, Msg.From, "./plugins/"))
 		cmd := exec.Command("bash", "-c", GetCommand(Msg.Body, Msg.From, "./plugins/"))
 		stdout, _ := cmd.StdoutPipe()
 		stderr, _ := cmd.StderrPipe()
@@ -168,7 +169,9 @@ func PresenceHandler(Conn *xmpp.Conn, Prs *xmpp.ClientPresence) {
 			if !in(admin, Prs.From) {
 				admin = append(admin, Prs.From)
 			}
-		} else {
+		}
+	default:
+		if in(admin, Prs.From) {
 			admin = del(admin, Prs.From)
 		}
 	}
