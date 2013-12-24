@@ -187,9 +187,10 @@ func GetCommand(body, from, dir string) string {
 }
 
 func Strip(s, s2 *string) {
-	r, _ := regexp.Compile("(`|\\$|\"|'|\\.\\.)") //strip
-	*s = r.ReplaceAllString(*s, "")
-	*s2 = r.ReplaceAllString(*s2, "")
+        strip, _ := regexp.Compile("(`|\\$|\\.\\.)")
+        q, _ := regexp.Compile("(\"|')")
+        *s = q.ReplaceAllString(strip.ReplaceAllString(*s, ""),"“")
+        *s2 = q.ReplaceAllString(strip.ReplaceAllString(*s2, ""),"“")
 }
 
 func GetNick(s string) string {
