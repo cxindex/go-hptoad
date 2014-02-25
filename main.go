@@ -26,14 +26,14 @@ var (
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
-        var (
-                Conn *xmpp.Conn
-                err error
-        )
+	var (
+		Conn *xmpp.Conn
+		err  error
+	)
 start:
-        if Conn != nil {
-                log.Println("Conn check:", Conn.Close())
-        }
+	if Conn != nil {
+		log.Println("Conn check:", Conn.Close())
+	}
 
 	Conn, err = xmpp.Dial("xmpp.ru:5222", "hypnotoad", "xmpp.ru", "pass", "AllHailHypnotoad", nil)
 	if err != nil {
