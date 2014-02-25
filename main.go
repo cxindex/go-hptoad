@@ -32,23 +32,22 @@ func main() {
 	)
 start:
 	if Conn != nil {
+		time.Sleep(5 * time.Second)
 		log.Println("Conn check:", Conn.Close())
+		time.Sleep(5 * time.Second)
 	}
 
 	Conn, err = xmpp.Dial("xmpp.ru:5222", "hypnotoad", "xmpp.ru", "pass", "AllHailHypnotoad", nil)
 	if err != nil {
 		log.Println("Conn", err)
-		time.Sleep(5 * time.Second)
 		goto start
 	}
 	if err := Conn.SignalPresence("dnd", "is there some food in this world?", 12); err != nil {
 		log.Println("Signal", err)
-		time.Sleep(5 * time.Second)
 		goto start
 	}
 	if err := Conn.SendPresence(room+"/"+name, ""); err != nil {
 		log.Println("Presence", err)
-		time.Sleep(5 * time.Second)
 		goto start
 	}
 
@@ -82,7 +81,6 @@ start:
 		case next = <-cs:
 		case <-time.After(65 * time.Second):
 			log.Println(Conn.Close(), "\n\t", "closed after 65 seconds of inactivity")
-			time.Sleep(5 * time.Second)
 			goto start
 		}
 		switch t := next.Value.(type) {
@@ -102,7 +100,6 @@ start:
 		}
 	}
 	log.Println(Conn.Close(), "\n\t", "wtf am I doing here?")
-	time.Sleep(5 * time.Second)
 	goto start
 }
 
