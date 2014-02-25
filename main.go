@@ -74,6 +74,7 @@ start:
 		case next = <-cs:
 		case <-time.After(65 * time.Second):
 			log.Println(Conn.Close(), "\n\t", "closed after 65 seconds of inactivity")
+			time.Sleep(5 * time.Second)
 			goto start
 		}
 		switch t := next.Value.(type) {
