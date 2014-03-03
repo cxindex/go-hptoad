@@ -123,7 +123,7 @@ func MessageHandler(Conn *xmpp.Conn, Msg *xmpp.ClientMessage) {
 		return ok
 	}
 	switch {
-	case f("^\\!megakick", &Msg.Body):
+	case f("^\\!megakick ", &Msg.Body):
 		Strip(&Msg.Body, &Msg.From)
 		s := (strings.Split(Msg.Body, "!megakick "))
 		if in(admin, Msg.From) {
