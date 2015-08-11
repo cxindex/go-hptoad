@@ -30,77 +30,77 @@ func main() {
 		Conn *xmpp.Conn
 		err  error
 	)
-start:
-	if Conn != nil {
-		time.Sleep(5 * time.Second)
-		log.Println("Conn check:", Conn.Close())
-		time.Sleep(5 * time.Second)
-	}
+	for {
+		if Conn != nil {
+			time.Sleep(5 * time.Second)
+			log.Println("Conn check:", Conn.Close())
+			time.Sleep(5 * time.Second)
+		}
 
-	Conn, err = xmpp.Dial("xmpp.ru:5222", "hypnotoad", "xmpp.ru", "pass", "AllHailHypnotoad", nil)
-	if err != nil {
-		log.Println("Conn", err)
-		goto start
-	}
-	if err := Conn.SignalPresence("dnd", "is there some food in this world?", 12); err != nil {
-		log.Println("Signal", err)
-		goto start
-	}
-	if err := Conn.SendPresence(room+"/"+name, ""); err != nil {
-		log.Println("Presence", err)
-		goto start
-	}
+		Conn, err = xmpp.Dial("xmpp.ru:5222", "hypnotoad", "xmpp.ru", "pass", "AllHailHypnotoad", nil)
+		if err != nil {
+			log.Println("Conn", err)
+			continue
+		}
+		if err := Conn.SignalPresence("dnd", "is there some food in this world?", 12); err != nil {
+			log.Println("Signal", err)
+			continue
+		}
+		if err := Conn.SendPresence(room+"/"+name, ""); err != nil {
+			log.Println("Presence", err)
+			continue
+		}
 
-	go func(Conn *xmpp.Conn) {
-		for {
-			select {
-			case <-time.After(60 * time.Second):
-				Conn.SendIQ("jabber.ru", "set", "<keepalive xmlns='urn:xmpp:keepalive:0'> <interval>60</interval> </keepalive>")
-				if _, _, err = Conn.SendIQ("jabber.ru", "get", "<ping xmlns='urn:xmpp:ping'/>"); err != nil {
-					log.Println("KeepAlive err:", err)
+		go func(Conn *xmpp.Conn) {
+			for {
+				select {
+				case <-time.After(60 * time.Second):
+					Conn.SendIQ("jabber.ru", "set", "<keepalive xmlns='urn:xmpp:keepalive:0'> <interval>60</interval> </keepalive>")
+					if _, _, err = Conn.SendIQ("jabber.ru", "get", "<ping xmlns='urn:xmpp:ping'/>"); err != nil {
+						log.Println("KeepAlive err:", err)
+						return
+					}
+					ping = time.Now()
+				}
+			}
+		}(Conn)
+
+		go func(Conn *xmpp.Conn) {
+			for {
+				next, err := Conn.Next()
+				if err != nil {
+					log.Println("Next err:", err)
 					return
 				}
-				ping = time.Now()
+				cs <- next
 			}
-		}
-	}(Conn)
+		}(Conn)
 
-	go func(Conn *xmpp.Conn) {
 		for {
-			next, err := Conn.Next()
-			if err != nil {
-				log.Println("Next err:", err)
-				return
+			select {
+			case next = <-cs:
+			case <-time.After(65 * time.Second):
+				log.Println(Conn.Close(), "\n\t", "closed after 65 seconds of inactivity")
+				break
 			}
-			cs <- next
-		}
-	}(Conn)
-
-	for {
-		select {
-		case next = <-cs:
-		case <-time.After(65 * time.Second):
-			log.Println(Conn.Close(), "\n\t", "closed after 65 seconds of inactivity")
-			goto start
-		}
-		switch t := next.Value.(type) {
-		case *xmpp.ClientPresence:
-			PresenceHandler(Conn, t)
-		case *xmpp.ClientMessage:
-			if len(t.Delay.Stamp) == 0 && len(t.Subject) == 0 {
-				log.Println(t)
-				if GetNick(t.From) != name {
-					if t.Type == "groupchat" {
-						go MessageHandler(Conn, t)
-					} else if xmpp.RemoveResourceFromJid(strings.ToLower(t.From)) == me {
-						go SelfHandler(Conn, t)
+			switch t := next.Value.(type) {
+			case *xmpp.ClientPresence:
+				PresenceHandler(Conn, t)
+			case *xmpp.ClientMessage:
+				if len(t.Delay.Stamp) == 0 && len(t.Subject) == 0 {
+					log.Println(t)
+					if GetNick(t.From) != name {
+						if t.Type == "groupchat" {
+							go MessageHandler(Conn, t)
+						} else if xmpp.RemoveResourceFromJid(strings.ToLower(t.From)) == me {
+							go SelfHandler(Conn, t)
+						}
 					}
 				}
 			}
 		}
+		log.Println(Conn.Close(), "\n\t", "wtf am I doing here?")
 	}
-	log.Println(Conn.Close(), "\n\t", "wtf am I doing here?")
-	goto start
 }
 
 func SelfHandler(Conn *xmpp.Conn, Msg *xmpp.ClientMessage) {
